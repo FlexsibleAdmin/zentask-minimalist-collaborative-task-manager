@@ -2,7 +2,7 @@
 
 A breathtakingly beautiful, minimalist to-do application featuring drag-and-drop organization, shareable lists, and edge-based persistence. ZenTask is designed to bring clarity and focus to your daily workflow through a "less is more" philosophy.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/FlexsibleAdmin/zentask-minimalist-collaborative-task-manager)
 
 ## ✨ Key Features
 
@@ -67,7 +67,7 @@ ZenTask is built to run on Cloudflare's edge network. You can deploy it directly
 
 ### One-Click Deploy
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/FlexsibleAdmin/zentask-minimalist-collaborative-task-manager)
 
 ### Manual Deployment
 
