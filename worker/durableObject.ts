@@ -1,58 +1,40 @@
 import { DurableObject } from "cloudflare:workers";
-import type { DemoItem } from '@shared/types';
-import { MOCK_ITEMS } from '@shared/mock-data';
-
+import type { Task, UpdateTaskDTO } from '@shared/types';
 // **DO NOT MODIFY THE CLASS NAME**
 export class GlobalDurableObject extends DurableObject {
-    async getCounterValue(): Promise<number> {
-      const value = (await this.ctx.storage.get("counter_value")) || 0;
-      return value as number;
+    // Helper to get key for a list
+    private getListKey(listId: string): string {
+        return `tasks_${listId}`;
     }
-  
-    async increment(amount = 1): Promise<number> {
-      let value: number = (await this.ctx.storage.get("counter_value")) || 0;
-      value += amount;
-      await this.ctx.storage.put("counter_value", value);
-      return value;
+    async getTasks(listId: string): Promise<Task[]> {
+        const tasks = await this.ctx.storage.get<Task[]>(this.getListKey(listId));
+        return tasks || [];
     }
-  
-    async decrement(amount = 1): Promise<number> {
-      let value: number = (await this.ctx.storage.get("counter_value")) || 0;
-      value -= amount;
-      await this.ctx.storage.put("counter_value", value);
-      return value;
+    async addTask(listId: string, task: Task): Promise<Task[]> {
+        const tasks = await this.getTasks(listId);
+        // Add to beginning of list for "newest first" feel, or end? 
+        // Usually todos are added to the bottom or top. Let's add to top (beginning) for visibility.
+        const updatedTasks = [task, ...tasks];
+        await this.ctx.storage.put(this.getListKey(listId), updatedTasks);
+        return updatedTasks;
     }
-
-    async getDemoItems(): Promise<DemoItem[]> {
-      const items = await this.ctx.storage.get("demo_items");
-      if (items) {
-        return items as DemoItem[];
-      }
-      
-      await this.ctx.storage.put("demo_items", MOCK_ITEMS);
-      return MOCK_ITEMS;
+    async updateTask(listId: string, taskId: string, updates: UpdateTaskDTO): Promise<Task[]> {
+        const tasks = await this.getTasks(listId);
+        const updatedTasks = tasks.map(t =>
+            t.id === taskId ? { ...t, ...updates } : t
+        );
+        await this.ctx.storage.put(this.getListKey(listId), updatedTasks);
+        return updatedTasks;
     }
-
-    async addDemoItem(item: DemoItem): Promise<DemoItem[]> {
-      const items = await this.getDemoItems();
-      const updatedItems = [...items, item];
-      await this.ctx.storage.put("demo_items", updatedItems);
-      return updatedItems;
+    async deleteTask(listId: string, taskId: string): Promise<Task[]> {
+        const tasks = await this.getTasks(listId);
+        const updatedTasks = tasks.filter(t => t.id !== taskId);
+        await this.ctx.storage.put(this.getListKey(listId), updatedTasks);
+        return updatedTasks;
     }
-
-    async updateDemoItem(id: string, updates: Partial<Omit<DemoItem, 'id'>>): Promise<DemoItem[]> {
-      const items = await this.getDemoItems();
-      const updatedItems = items.map(item => 
-        item.id === id ? { ...item, ...updates } : item
-      );
-      await this.ctx.storage.put("demo_items", updatedItems);
-      return updatedItems;
-    }
-
-    async deleteDemoItem(id: string): Promise<DemoItem[]> {
-      const items = await this.getDemoItems();
-      const updatedItems = items.filter(item => item.id !== id);
-      await this.ctx.storage.put("demo_items", updatedItems);
-      return updatedItems;
+    async reorderTasks(listId: string, newOrderTasks: Task[]): Promise<Task[]> {
+        // We overwrite the list with the new order provided by the client
+        await this.ctx.storage.put(this.getListKey(listId), newOrderTasks);
+        return newOrderTasks;
     }
 }
